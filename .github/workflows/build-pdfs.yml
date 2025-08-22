@@ -71,8 +71,10 @@ jobs:
           cp -v build/*.pdf public/"$UUID"/
 
           # Per-UUID index
-          cat > public/"$UUID"/index.html <<EOF
-          <!doctype html><meta charset="utf-8"><title>Scenario PDFs</title>
+          cat <<'HTML' > public/"$UUID"/index.html
+          <!doctype html>
+          <meta charset="utf-8">
+          <title>Scenario PDFs</title>
           <h1>Scenario PDFs</h1>
           <ul>
             <li><a href="mengm0056_s1_handout.pdf">Scenario 1</a></li>
@@ -81,17 +83,17 @@ jobs:
             <li><a href="mengm0056_s4_handout.pdf">Scenario 4</a></li>
             <li><a href="mengm0056_s5_handout.pdf">Scenario 5</a></li>
           </ul>
-          EOF
+          HTML
 
-          # Root index
-          if [ ! -f docs/index.html ]; then
-            mkdir -p docs
-            cat > docs/index.html <<EOF
-            <!doctype html><meta charset="utf-8"><title>MENGM0056 – PDFs</title>
-            <h1>MENGM0056 – Scenario PDFs</h1>
-            <p>Use the public form to request PDFs by UUID. Once generated, your files appear at /<UUID>/.</p>
-            EOF
-          fi
+          # Root index (landing page)
+          mkdir -p docs
+          cat <<'HTML' > docs/index.html
+          <!doctype html>
+          <meta charset="utf-8">
+          <title>MENGM0056 – PDFs</title>
+          <h1>MENGM0056 – Scenario PDFs</h1>
+          <p>Use the public form to request PDFs by UUID. Once generated, your files appear at /<UUID>/.</p>
+          HTML
 
           cp docs/index.html public/index.html
 
