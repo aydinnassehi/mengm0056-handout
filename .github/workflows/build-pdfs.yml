@@ -1,0 +1,94 @@
+name: Build PDFs from UUID
+
+on:
+  workflow_dispatch:
+    inputs:
+      uuid:
+        description: 'UUID to build PDFs for'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate UUID input
+        run: |
+          UUID="${{ github.event.inputs.uuid }}"
+          if ! echo "$UUID" | grep -Ei '^[0-9a-f-]{16,}$' >/dev/null; then
+            echo "Invalid UUID input."
+            exit 1
+          fi
+          echo "UUID=$UUID" >> $GITHUB_ENV
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install TeX Live
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            texlive-latex-recommended texlive-latex-extra texlive-fonts-recommended \
+            latexmk
+
+      - name: Generate LaTeX files
+        run: |
+          mkdir -p build
+          python generate_s1_handout.py --uuid "$UUID" > build/mengm0056_s1_handout.tex
+          python generate_s2_handout.py --uuid "$UUID" > build/mengm0056_s2_handout.tex
+          python generate_s3_handout.py --uuid "$UUID" > build/mengm0056_s3_handout.tex
+          python generate_s4_handout.py --uuid "$UUID" > build/mengm0056_s4_handout.tex
+          python generate_s5_handout.py --uuid "$UUID" > build/mengm0056_s5_handout.tex
+
+      - name: Compile PDFs
+        run: |
+          cd build
+          for f in *.tex; do
+            latexmk -pdf -interaction=nonstopmode -halt-on-error "$f"
+            latexmk -c
+          done
+          cd ..
+
+      - name: Prepare public folder
+        run: |
+          mkdir -p public/"$UUID"
+          cp -v build/*.pdf public/"$UUID"/
+          # Per-UUID index
+          cat > public/"$UUID"/index.html <<HTML
+<!doctype html><meta charset="utf-8"><title>$UUID – PDFs</title>
+<h1>UUID: $UUID</h1>
+<ul>
+  <li><a href="mengm0056_s1_handout.pdf">Scenario 1</a></li>
+  <li><a href="mengm0056_s2_handout.pdf">Scenario 2</a></li>
+  <li><a href="mengm0056_s3_handout.pdf">Scenario 3</a></li>
+  <li><a href="mengm0056_s4_handout.pdf">Scenario 4</a></li>
+  <li><a href="mengm0056_s5_handout.pdf">Scenario 5</a></li>
+</ul>
+HTML
+          # Root index (landing page — can be replaced later)
+          if [ ! -f docs/index.html ]; then
+            mkdir -p docs
+            cat > docs/index.html <<'HTML'
+<!doctype html><meta charset="utf-8"><title>MENGM0056 – PDFs</title>
+<h1>MENGM0056 – Scenario PDFs</h1>
+<p>Use the public form to request PDFs by UUID. Once generated, your files appear at /&lt;UUID&gt;/.</p>
+HTML
+          fi
+          cp docs/index.html public/index.html
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: public
+          publish_branch: gh-pages

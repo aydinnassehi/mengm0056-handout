@@ -1,0 +1,43 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MENGM0056 – Get your PDFs</title>
+<body style="font-family: system-ui, sans-serif; max-width: 720px; margin: 2rem auto; line-height: 1.5;">
+  <h1>MENGM0056 – Scenario PDFs</h1>
+  <p>Enter your UUID. The system will generate five PDFs (one per scenario) and publish them to a URL unique to your UUID.</p>
+  <form id="f" onsubmit="return false;">
+    <label for="uuid">UUID</label><br>
+    <input id="uuid" name="uuid" required style="width: 100%; padding: .6rem; margin: .5rem 0;">
+    <button id="btn">Generate PDFs</button>
+  </form>
+  <pre id="out" style="white-space: pre-wrap; background:#f6f8fa; padding:1rem;"></pre>
+  <script>
+    const endpoint = "https://YOUR-WORKER-URL/dispatch"; // e.g. https://mengm0056-dispatch.yoursubdomain.workers.dev/dispatch
+    const out = document.getElementById('out');
+    document.getElementById('btn').addEventListener('click', async () => {
+      const uuid = document.getElementById('uuid').value.trim();
+      if (!uuid) return;
+      out.textContent = "Submitting request…";
+      try {
+        const r = await fetch(endpoint, {
+          method: "POST",
+          headers: {"Content-Type":"application/json"},
+          body: JSON.stringify({ uuid })
+        });
+        const data = await r.json();
+        if (!r.ok) {
+          out.textContent = "Error: " + (data.error || r.statusText);
+          return;
+        }
+        out.textContent = `Request accepted for UUID ${data.uuid}.
+Your PDFs will be published here:
+${data.url}
+
+If the folder returns 404 initially, refresh shortly.`;
+      } catch (e) {
+        out.textContent = "Network error. Please try again.";
+      }
+    });
+  </script>
+</body>
+
