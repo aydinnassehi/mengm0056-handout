@@ -38,8 +38,12 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            texlive-latex-recommended texlive-latex-extra texlive-fonts-recommended \
-            latexmk
+            texlive-latex-recommended \
+            texlive-latex-extra \
+            texlive-fonts-recommended \
+            texlive-science \
+            texlive-fonts-extra \
+            texlive-plain-generic
 
       - name: Generate LaTeX files
         run: |
