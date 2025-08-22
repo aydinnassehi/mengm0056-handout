@@ -1,0 +1,134 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{booktabs}
+\usepackage{siunitx}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+\usepackage{caption}
+\usepackage{longtable}
+\sisetup{detect-all=true}
+
+\setlist[itemize]{nosep}
+\setlist[enumerate]{nosep}
+
+\title{MENGM0056 - Product and Production Systems\\Scenario 2: Automotive Components - Aluminium Gearbox Casings}
+\author{Hand-out for Group Coursework (2025/26)}
+\date{}
+\begin{document}
+\maketitle
+
+\noindent \textbf{UUID seed:} 123e4567-e89b-12d3-a456-426614174000 \quad \textbf{Checksum:} 63af13b0a8d7
+
+\section*{Purpose}
+This scenario simulates a cast-and-machine workflow for aluminium gearbox casings. Your group receives seeded baseline parameters and must propose improvements that reduce cost and environmental impact while maintaining the weekly output target and quality.
+
+\section*{Narrative}
+Aluminium and energy prices have risen, and new environmental performance reporting requires reductions in both scrap and energy per good part. Production capacity must be maintained to satisfy weekly orders. Capital expenditure is constrained in the short term, so parameter, policy, and scheduling changes are preferred.
+
+\section*{Entities and flow (fixed structure)}
+Gravity die casting $\rightarrow$ X-ray NDT $\rightarrow$ Heat treatment $\rightarrow$ CNC rough/finish $\rightarrow$ Washing $\rightarrow$ Coordinate-measuring machine (CMM) $\rightarrow$ Pack.
+
+\section*{Baseline parameters (seeded)}
+\subsection*{Global}
+\begin{tabular}{@{}ll@{}}
+\toprule
+Shifts per day & 2 \\
+Shift length & 7.5~h \\
+Weekly output target & 5311~good~parts/week \\
+Weekly demand CV & 0.077 \\
+Sustainability emphasis & scrap \\
+\bottomrule
+\end{tabular}
+
+\subsection*{Stations and process timings}
+\begin{longtable}{@{}lllll@{}}
+\toprule
+\textbf{Stage} & \textbf{Count} & \textbf{Time} & \textbf{Quality} & \textbf{Notes} \\
+\midrule
+Casting cells & 4 & 192.8~s/part & Scrap 0.0481 & Gravity die casting \\
+X-ray NDT & 1 & 116.2~s/part & Detect 0.921 & Rework path 255.0~s if repairable \\
+Heat treatment oven & 1 & 381.0~min/batch & - & Batch size 199 parts \\
+CNC machining centres & 7 & 444.0~s/part & Scrap 0.0045 & Combined rough and finish \\
+Washing & 2 & 112.0~s/part & - & Deburr and wash \\
+CMM inspection & 2 & 645.0~s/part & Scrap 0.0011 & Late discovery risk \\
+\bottomrule
+\end{longtable}
+
+\subsection*{Materials and energy}
+\begin{tabular}{@{}ll@{}}
+\toprule
+Net casting mass & 6.11~kg \\
+Gating and runners & 1.41~kg \\
+Recoverable yield from gating & 66\% \\
+Alloy price & \pounds 2.97~/kg \\
+Scrap recovery value & \pounds 1.03~/kg \\
+\midrule
+Casting energy & 3.89~kWh/part \\
+Machining energy & 1.03~kWh/part \\
+Heat treatment energy & 1.89~kWh/part \\
+Tariff off-peak & 18.1~p/kWh \\
+Tariff peak & 39.4~p/kWh \\
+Peak window & 17:00\,--\,19:00 \\
+\bottomrule
+\end{tabular}
+
+\subsection*{Reliability}
+\begin{tabular}{@{}lll@{}}
+\toprule Resource & MTBF (min) & MTTR (min) \\
+\midrule
+Furnace & 704.7 & 44.6 \\
+CastingCell & 414.3 & 15.1 \\
+Oven & 780.6 & 44.0 \\
+CNC & 464.6 & 29.8 \\
+CMM & 834.1 & 21.8 \\
+\bottomrule
+\end{tabular}
+
+\subsection*{Costs}
+\begin{tabular}{@{}ll@{}}
+\toprule
+X-ray NDT imaging cost & \pounds 0.32~/part \\
+Coolant and consumables & \pounds 0.05~/part \\
+Labour cost & \pounds 19.19~/h \\
+Rework labour cost & \pounds 25.45~/h \\
+Environmental cost proxy & 3.1~p/kWh \\
+\bottomrule
+\end{tabular}
+
+\section*{Required KPIs}
+\begin{itemize}
+\item Scrap percentage by stage and rolled throughput yield (RTY).
+\item Energy consumption per good part, and energy cost per good part.
+\item Material utilisation: net mass divided by total poured, and alloy cost per good part.
+\item Weekly throughput and on-time completion against the weekly output target.
+\item CMM queue time and heat treatment oven utilisation.
+\end{itemize}
+\section*{Techniques to apply}
+\begin{itemize}
+\item \textbf{Modelling \& KPIs}: RTY ladder; energy and material balance per good part.
+\item \textbf{CAE}: Casting gating and riser changes; distortion risk and machining allowance sensitivity.
+\item \textbf{Mathematical programming}: Oven batch sizing and start-time scheduling to avoid peak tariffs; CNC assignment and shift planning.
+\item \textbf{Uncertainty modelling}: Demand variability; breakdown distributions; defect modes and NDT detection uncertainty.
+\item \textbf{Metaheuristic optimisation}: Multi-parameter process window search for casting temperatures, die temperatures, and shot speeds under yield and cycle constraints.
+\item \textbf{Simulation}: Discrete-event simulation for bottlenecks at CMM and ovens; evaluate queueing and batch policies.
+\end{itemize}
+\section*{Improvement levers (examples, not exhaustive)}
+\begin{itemize}
+\item Shift oven starts to minimise time in peak tariff windows while protecting weekly output.
+\item Modify gating and riser design to cut porosity and reduce machining allowances.
+\item Balance CNC routing based on cycle spread; consider dynamic assignment to reduce queues.
+\item Introduce NDT triage rules for repairability to prevent non-valuable rework.
+\item Implement scrap segregation to maximise recovery value.
+\end{itemize}
+\section*{Deliverables}
+\begin{enumerate}
+\item A report (max 20 sides of A4 including figures and references; appendices unmarked but admissible as evidence).
+\item A weekly production plan demonstrating compliance with the output target and tariff policy.
+\item Model files (e.g., simulation, optimisation, CAE) as appendices or evidence.
+\end{enumerate}
+\section*{Assessment emphasis}
+Sound KPI selection and modelling; correctness and transparency of calculations; appropriate choice of techniques; quality of experimental design; depth of analysis on scrap and energy; and clear, defensible recommendations that meet operational constraints.
+\section*{Data ethics and reproducibility}
+Report your UUID seed and any random seeds used within tools. Include enough detail to allow independent regeneration of your parameter tables.
+
+\end{document}

@@ -1,0 +1,112 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{booktabs}
+\usepackage{siunitx}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+\usepackage{caption}
+\usepackage{longtable}
+\sisetup{detect-all=true}
+
+\setlist[itemize]{nosep}
+\setlist[enumerate]{nosep}
+
+\title{MENGM0056 - Product and Production Systems\\Scenario 1: Smartphone Sub-assembly Line}
+\author{Hand-out for Group Coursework (2025/26)}
+\date{}
+\begin{document}
+\maketitle
+
+\noindent \textbf{UUID seed:} 123e4567-e89b-12d3-a456-426614174000 \quad \textbf{Checksum:} 638773768ce9
+
+\section*{Purpose}
+This scenario simulates decision-making in a mid-volume consumer-electronics sub-assembly factory. Your group receives a fixed baseline design (resources, cycle times, defect and failure characteristics, and demand). You will identify improvement opportunities, select appropriate KPIs, choose and apply techniques from the unit, and justify your proposed changes to management.
+
+\section*{Narrative}
+A contract manufacturer assembles a mid-range smartphone. Quality issues around camera alignment and intermittent congestion at functional test have been observed during promotional spikes. Demand is expected to grow. Capital expenditure is constrained; process and policy changes are preferred.
+
+\section*{Entities and flow (fixed structure)}
+PCB population (SMT) $\rightarrow$ Camera module build \& alignment $\rightarrow$ In-circuit test (ICT) $\rightarrow$ Final assembly \& seal $\rightarrow$ Functional test (FT) $\rightarrow$ Pack.
+
+\section*{Baseline parameters (seeded)}
+\subsection*{Global}
+\begin{tabular}{@{}ll@{}}
+\toprule
+Shifts per day & 2 \\
+Shift length & 7.5~h \\
+Demand (nominal) & 921~units/day \\
+Demand CV & 0.156 \\
+On-time target & 95\% \\
+\bottomrule
+\end{tabular}
+
+\subsection*{Stations}
+\begin{longtable}{@{}lllll@{}}
+\toprule
+\textbf{Resource} & \textbf{Count} & \textbf{Time} & \textbf{Quality} & \textbf{Notes} \\
+\midrule
+SMT lines & 2 & 31.2~s/board & FPY 0.9863 & Parallel lines \\
+Camera alignment cells & 1 & 48.5~s/unit & Defect 0.0171 & Rework permitted \\
+ICT bays & 1 & 70.4~s/unit & Detect 0.858 & Serial/parallel as per count \\
+Final assembly cells & 1 & 64.3~s/unit & FPY 0.9755 & Manual with jigs \\
+FT rack slots & 7 & 134.0~s/unit & False fail 0.0063 & Parallel slots; queueing \\
+Rework station(s) & 1 & 171.4~s/unit & Success 0.89 & From alignment/ICT \\
+\bottomrule
+\end{longtable}
+
+\subsection*{Reliability and logistics}
+\begin{tabular}{@{}llll@{}}
+\toprule Resource & MTBF (min) & MTTR (min) & Arrival jitter CV \\
+\midrule
+SMT & 301.3 & 12.1 & 0.075 \\
+Alignment & 323.8 & 6.6 & 0.09 \\
+ICT & 380.3 & 11.1 & 0.096 \\
+FinalAssembly & 314.0 & 16.9 & 0.055 \\
+FT & 340.8 & 13.2 & 0.117 \\
+\bottomrule
+\end{tabular}
+
+\subsection*{Costs}
+\begin{tabular}{@{}ll@{}}
+\toprule
+Scrap cost per unit & \pounds 28.47 \\
+Rework labour cost per hour & \pounds 23.81 \\
+\bottomrule
+\end{tabular}
+
+\section*{Required KPIs}
+\begin{itemize}
+\item First-pass yield (FPY) by station and rolled throughput yield (RTY).
+\item Throughput (units/day), on-time delivery probability, and average lead time.
+\item Work-in-progress (WIP) before FT and maximum queue length at FT.
+\item Rework rate and rework hours/day; scrap cost per unit.
+\end{itemize}
+\section*{Techniques to apply (choose appropriately)}
+\begin{itemize}
+\item \textbf{Modelling \& KPIs}: KPI definitions, RTY ladder, capacity calculations.
+\item \textbf{CAE}: Camera alignment jig/tolerance stack-up if you propose design changes affecting quality or time.
+\item \textbf{Mathematical programming}: Staffing and test-bay/slot scheduling; buffer sizing under constraints.
+\item \textbf{Uncertainty modelling}: Demand, defect, test time variability, breakdowns; Monte Carlo assessment of service level.
+\item \textbf{Simulation}: Discrete-event simulation of the line (bottlenecks and rework loop). Agent-based modelling is optional if human-cobot interactions are relevant.
+\item \textbf{Metaheuristic optimisation}: Parameter tuning for conflicting objectives (e.g., reduce defect rate without increasing cycle time beyond takt).
+\end{itemize}
+\section*{Improvement levers (examples, not exhaustive)}
+\begin{itemize}
+\item Realignment of staffing across ICT and FT; time-of-day pooling of testers.
+\item Buffer policy revision to avoid blocking before FT.
+\item Tolerance/jig updates informed by CAE to cut alignment defects.
+\item Preventive maintenance intervals to reduce micro-stoppages at FT.
+\item Rework routing policies (thresholds for scrap vs. rework).
+\end{itemize}
+\section*{Deliverables}
+\begin{enumerate}
+\item A report (max 20 sides of A4 including figures and references; appendices unmarked but admissible as evidence).
+\item Executive summary for senior management (max one page).
+\item Model files (e.g., simulation, optimisation) as appendices/evidence.
+\end{enumerate}
+\section*{Assessment emphasis}
+Clarity of problem framing and KPI choice; correctness and transparency of models; appropriateness of technique selection; quality of experimental design; depth of analysis; and persuasiveness of recommendations given operational constraints.
+\section*{Data ethics and reproducibility}
+Report your UUID seed and any random seeds used within tools to ensure reproducibility. State assumptions clearly.
+
+\end{document}
