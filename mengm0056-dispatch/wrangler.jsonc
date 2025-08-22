@@ -1,0 +1,18 @@
+{
+  // Worker name
+  "name": "mengm0056-dispatch",
+
+  // Your entrypoint – Wrangler will build TS automatically
+  "main": "worker.js",
+
+  // Ensure compatibility date is set (choose a recent date)
+  "compatibility_date": "2024-10-01",
+
+  // Vars are injected as environment variables into your Worker
+  "vars": {
+    "GH_OWNER": "aydinnassehi",
+    "GH_REPO": "mengm0056-handout",
+    "GH_WORKFLOW": "build-pdfs.yml",
+    "GH_REF": "main"
+  }
+}
