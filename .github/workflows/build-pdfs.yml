@@ -82,7 +82,7 @@ jobs:
 </ul>
 EOF
 
-          # Root index
+          # Root index (landing page)
           if [ ! -f docs/index.html ]; then
             mkdir -p docs
             cat > docs/index.html <<'EOF'
