@@ -85,14 +85,30 @@ jobs:
           </ul>
           HTML
 
-          # Root index (landing page)
+          # Root index (landing page with form)
           mkdir -p docs
           cat <<'HTML' > docs/index.html
           <!doctype html>
           <meta charset="utf-8">
           <title>MENGM0056 – PDFs</title>
           <h1>MENGM0056 – Scenario PDFs</h1>
-          <p>Use the public form to request PDFs by UUID. Once generated, your files appear at /<UUID>/.</p>
+
+          <p>Enter your assigned UUID below to access your scenario PDFs.</p>
+
+          <form id="uuidForm">
+            <input type="text" id="uuidInput" placeholder="Enter UUID" size="40" required>
+            <button type="submit">Get PDFs</button>
+          </form>
+
+          <script>
+          document.getElementById('uuidForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const uuid = document.getElementById('uuidInput').value.trim();
+            if (uuid) {
+              window.location.href = uuid + "/index.html";
+            }
+          });
+          </script>
           HTML
 
           cp docs/index.html public/index.html
