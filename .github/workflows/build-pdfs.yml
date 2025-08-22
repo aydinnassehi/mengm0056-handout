@@ -20,8 +20,8 @@ jobs:
       - name: Validate UUID input
         run: |
           UUID="${{ github.event.inputs.uuid }}"
-          if ! echo "$UUID" | grep -Ei '^[0-9a-f-]{16,}$' >/dev/null; then
-            echo "Invalid UUID input."
+          if [ -z "$UUID" ]; then
+            echo "Empty UUID input."
             exit 1
           fi
           echo "UUID=$UUID" >> $GITHUB_ENV
@@ -38,13 +38,14 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
+            latexmk \
             texlive-latex-recommended \
             texlive-latex-extra \
             texlive-fonts-recommended \
             texlive-science \
             texlive-fonts-extra \
-            texlive-plain-generic \
-            latexmk
+            texlive-plain-generic
+          latexmk -v
 
       - name: Generate LaTeX files
         run: |
@@ -82,7 +83,7 @@ jobs:
 </ul>
 EOF
 
-          # Root index (landing page)
+          # Root index
           if [ ! -f docs/index.html ]; then
             mkdir -p docs
             cat > docs/index.html <<'EOF'
