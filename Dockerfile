@@ -1,5 +1,5 @@
 FROM python:3.11-slim
-
+ENV FLASK_APP=app.py
 # Install TeX Live and latexmk
 RUN apt-get update && apt-get install -y --no-install-recommends \
     latexmk \
@@ -24,4 +24,6 @@ COPY . .
 EXPOSE 8000
 
 # Run the Flask app
-CMD ["gunicorn", "-b", "0.0.0.0:8000", "app:app"]
+CMD ["flask", "run", "--host=0.0.0.0", "--port=$PORT"]
+
+
