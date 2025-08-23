@@ -417,7 +417,7 @@ def render_latex(p: ScenarioParams) -> str:
     lines.append(r"\section*{Deliverables}")
     lines.append(r"\begin{enumerate}")
     lines.append(r"\item A report (max 20 sides of A4 including figures and references; appendices unmarked but admissible as evidence).")
-    lines.append(r"\item A weekly production plan demonstrating compliance with the output target and tariff policy.")
+    lines.append(r"\item The report should include a weekly production plan demonstrating compliance with the output target and tariff policy.")
     lines.append(r"\item Model files (e.g., simulation, optimisation, CAE) as appendices or evidence.")
     lines.append(r"\end{enumerate}")
 
