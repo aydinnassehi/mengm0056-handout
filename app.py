@@ -3,27 +3,33 @@ import io
 import json
 import base64
 import re
+import time
 import threading
 import tempfile
 import subprocess
 from pathlib import Path
-from flask import Flask, request, redirect, abort, jsonify, render_template_string
+
 import requests
+from flask import Flask, request, redirect, abort, jsonify, render_template_string
 
-# --- Config via env ---
-GH_OWNER = os.environ["GH_OWNER"]
-GH_REPO  = os.environ["GH_REPO"]
-GH_TOKEN = os.environ["GH_TOKEN"]
+# -------- Configuration (env) --------
+# GitHub repo where gh-pages hosts the PDFs
+GH_OWNER = os.environ["GH_OWNER"]          # e.g. "your-org-or-user"
+GH_REPO  = os.environ["GH_REPO"]           # e.g. "your-repo"
+GH_TOKEN = os.environ["GH_TOKEN"]          # Fine-grained PAT: Contents RW + Pages RW
 PAGES_BRANCH = os.environ.get("PAGES_BRANCH", "gh-pages")
-PAGES_BASE = os.environ["PAGES_BASE"]  # e.g. https://<owner>.github.io/<repo>
+PAGES_BASE   = os.environ["PAGES_BASE"]    # e.g. "https://your-org.github.io/your-repo"
 
+# Build behaviour
 SCENARIOS = [1, 2, 3, 4, 5]
+PAGES_BUILD_TIMEOUT_S   = int(os.environ.get("PAGES_BUILD_TIMEOUT_S", "180"))
+PAGES_PROPAGATE_TIMEOUT = int(os.environ.get("PAGES_PROPAGATE_TIMEOUT", "90"))
+POLL_INTERVAL_S         = float(os.environ.get("POLL_INTERVAL_S", "1.2"))
 
 app = Flask(__name__)
 
-# --- Simple in-memory progress store ---
-# NOTE: This lives in-process. Run a single worker (e.g. gunicorn -w 1) unless you add Redis.
-STATUS = {}  # uuid -> dict(status)
+# -------- Minimal in-process status store (single worker) --------
+STATUS = {}  # uuid -> dict
 STATUS_LOCK = threading.Lock()
 
 def set_status(uuid, **fields):
@@ -34,9 +40,9 @@ def set_status(uuid, **fields):
 
 def get_status(uuid):
     with STATUS_LOCK:
-        return STATUS.get(uuid, {}).copy()
+        return dict(STATUS.get(uuid, {}))
 
-# --- GitHub helpers ---
+# -------- GitHub helpers --------
 def _gh_headers():
     return {
         "Authorization": f"Bearer {GH_TOKEN}",
@@ -79,23 +85,63 @@ def upload_file(path_in_repo: str, local_path: Path, commit_msg: str):
 def uuid_folder_exists(uuid: str) -> bool:
     return gh_get(f"{uuid}").status_code == 200
 
-# --- Build logic with progress updates ---
-def build_and_publish(uuid: str):
-    """Runs in a background thread; updates STATUS[uuid]."""
-    try:
-        set_status(uuid, stage="starting", step=0, total= (len(SCENARIOS)*3 + 2), done=False, error=None)
+# -------- GitHub Pages build/ready helpers --------
+def trigger_pages_build():
+    url = f"https://api.github.com/repos/{GH_OWNER}/{GH_REPO}/pages/builds"
+    r = requests.post(url, headers=_gh_headers())
+    if r.status_code not in (200, 201, 204):
+        raise RuntimeError(f"Failed to trigger Pages build: {r.status_code} {r.text}")
 
-        # If already published, nothing to do
+def get_latest_pages_build():
+    url = f"https://api.github.com/repos/{GH_OWNER}/{GH_REPO}/pages/builds/latest"
+    r = requests.get(url, headers=_gh_headers())
+    if r.status_code != 200:
+        raise RuntimeError(f"Failed to fetch latest Pages build: {r.status_code} {r.text}")
+    return r.json()  # includes 'status': 'built'|'building'|'errored'
+
+def wait_for_pages_build(max_seconds=PAGES_BUILD_TIMEOUT_S, poll_every=3):
+    deadline = time.time() + max_seconds
+    last_status = None
+    while time.time() < deadline:
+        try:
+            info = get_latest_pages_build()
+            last_status = info.get("status")
+            if last_status in ("built", "errored"):
+                return last_status
+        except Exception:
+            pass
+        time.sleep(poll_every)
+    return last_status or "unknown"
+
+def wait_for_url_200(url, max_seconds=PAGES_PROPAGATE_TIMEOUT, poll_every=3):
+    deadline = time.time() + max_seconds
+    while time.time() < deadline:
+        try:
+            r = requests.head(url, allow_redirects=True, timeout=5)
+            if r.status_code == 200:
+                return True
+        except Exception:
+            pass
+        time.sleep(poll_every)
+    return False
+
+# -------- Build + publish (runs in background thread) --------
+def build_and_publish(uuid: str):
+    try:
+        total_steps = (len(SCENARIOS) * 3) + 4   # generate + compile + upload per scenario (x3), plus index upload + pages build + propagate + done
+        step = 0
+        set_status(uuid, stage="starting", step=step, total=total_steps, done=False, error=None)
+
+        # If already live on Pages, finish immediately
         if uuid_folder_exists(uuid):
-            set_status(uuid, stage="already_published", step=1)
+            set_status(uuid, stage="already_published", step=total_steps-1)
             set_status(uuid, done=True, pages_url=f"{PAGES_BASE}/{uuid}/")
             return
 
         with tempfile.TemporaryDirectory(prefix=f"{uuid}_") as tmp:
             tmpdir = Path(tmp)
-            step = 0
 
-            # Generate & compile each scenario
+            # Generate + compile each scenario
             for s in SCENARIOS:
                 step += 1; set_status(uuid, stage=f"generate_s{s}", step=step)
                 tex_path = tmpdir / f"mengm0056_s{s}_handout.tex"
@@ -120,7 +166,7 @@ def build_and_publish(uuid: str):
 </ul>"""
             (tmpdir / "index.html").write_text(html, encoding="utf-8")
 
-            # Upload everything to gh-pages/<uuid>/
+            # Upload PDFs and index to gh-pages/<uuid>/
             commit_msg = f"Add scenario PDFs for {uuid}"
             for s in SCENARIOS:
                 step += 1; set_status(uuid, stage=f"upload_s{s}", step=step)
@@ -129,35 +175,36 @@ def build_and_publish(uuid: str):
             step += 1; set_status(uuid, stage="upload_index", step=step)
             upload_file(f"{uuid}/index.html", tmpdir / "index.html", commit_msg)
 
-        set_status(uuid, stage="done", done=True, pages_url=f"{PAGES_BASE}/{uuid}/")
+        # Trigger GitHub Pages build and wait until it is built
+        step += 1; set_status(uuid, stage="trigger_pages_build", step=step)
+        trigger_pages_build()
+
+        step += 1; set_status(uuid, stage="pages_building", step=step)
+        status = wait_for_pages_build(max_seconds=PAGES_BUILD_TIMEOUT_S, poll_every=3)
+        if status == "errored":
+            set_status(uuid, done=True, error="GitHub Pages build failed", pages_url=None)
+            return
+
+        # Optional: wait for CDN propagation so the first GET does not 404
+        pages_url = f"{PAGES_BASE}/{uuid}/"
+        step += 1; set_status(uuid, stage="pages_propagating", step=step, pages_url=pages_url)
+        _ok = wait_for_url_200(pages_url, max_seconds=PAGES_PROPAGATE_TIMEOUT, poll_every=3)
+
+        # Done
+        set_status(uuid, stage="done", step=total_steps, done=True, pages_url=pages_url, error=None)
 
     except subprocess.CalledProcessError as e:
         set_status(uuid, done=True, error=f"Build error: {e}", pages_url=None)
     except Exception as e:
         set_status(uuid, done=True, error=f"Server error: {e}", pages_url=None)
 
-# --- Endpoints ---
-
-@app.get("/start")
-def start():
-    """Return a waiting room page and kick off background build if needed."""
-    uuid = (request.args.get("uuid") or "").strip()
-    if not uuid or not re.fullmatch(r"[0-9a-fA-F-]{16,}", uuid):
-        abort(400, "Missing/invalid uuid")
-
-    s = get_status(uuid)
-    if not s or s.get("done") and not s.get("pages_url"):
-        # Either first time or previous error -> reset
-        set_status(uuid, stage="queued", step=0, total=(len(SCENARIOS)*3 + 2), done=False, error=None)
-        threading.Thread(target=build_and_publish, args=(uuid,), daemon=True).start()
-
-    # Simple waiting-room HTML with polling + progress bar
-    page = """<!doctype html>
+# -------- HTTP endpoints --------
+WAITING_ROOM_HTML = """<!doctype html>
 <meta charset="utf-8">
 <title>Building PDFs…</title>
 <style>
   body{font-family:system-ui,Segoe UI,Roboto,Arial;margin:2rem auto;max-width:720px;line-height:1.5}
-  .bar{height:14px;background:#eee;border-radius:7px;overflow:hidden}
+  .bar{height:14px;background:#eee;border-radius:7px;overflow:hidden;margin:.5rem 0 1rem 0}
   .fill{height:100%;width:0%;}
   .fill.ok{background:#4caf50}
   .fill.err{background:#d32f2f}
@@ -167,7 +214,7 @@ def start():
 <h1>Generating your scenario PDFs</h1>
 <p class="muted">UUID: <code id="u"></code></p>
 <div class="bar"><div id="fill" class="fill"></div></div>
-<p id="stage" class="muted" style="margin:.5rem 0 1rem 0;">Starting…</p>
+<p id="stage" class="muted">Starting…</p>
 <p id="msg" class="muted"></p>
 <script>
 const uuid = new URLSearchParams(location.search).get('uuid');
@@ -175,14 +222,18 @@ document.getElementById('u').textContent = uuid;
 const fill = document.getElementById('fill');
 const stage = document.getElementById('stage');
 const msg = document.getElementById('msg');
+const friendly = {
+  trigger_pages_build: "Triggering GitHub Pages build…",
+  pages_building: "GitHub Pages is building your site…",
+  pages_propagating: "Publishing complete; waiting for it to go live…"
+};
 
 async function tick(){
   try{
     const r = await fetch(`/status?uuid=${encodeURIComponent(uuid)}&t=${Date.now()}`);
     const s = await r.json();
     if(s.error){
-      fill.className='fill err';
-      fill.style.width='100%';
+      fill.className='fill err'; fill.style.width='100%';
       stage.textContent = 'Error';
       msg.textContent = s.error;
       return;
@@ -191,21 +242,34 @@ async function tick(){
     const pct = Math.max(0, Math.min(100, Math.round(100*(s.step||0)/total)));
     fill.className = 'fill ok';
     fill.style.width = pct + '%';
-    stage.textContent = s.stage ? `Stage: ${s.stage} (${pct}%)` : 'Working…';
+    const label = friendly[s.stage] || (s.stage ? `Stage: ${s.stage}` : 'Working…');
+    stage.textContent = `${label} (${pct}%)`;
     if(s.done && s.pages_url){
       stage.textContent = 'Done - opening your PDFs…';
       setTimeout(()=>{ window.location.href = s.pages_url; }, 600);
       return;
     }
-  }catch(e){
-    // ignore transient errors; keep polling
-  }
-  setTimeout(tick, 1200);
+  }catch(e){ /* ignore; keep polling */ }
+  setTimeout(tick, %(poll)s);
 }
 tick();
 </script>
-"""
-    return render_template_string(page)
+""".replace("%(poll)s", str(int(POLL_INTERVAL_S*1000)))
+
+@app.get("/start")
+def start():
+    uuid = (request.args.get("uuid") or "").strip()
+    if not uuid or not re.fullmatch(r"[0-9a-fA-F-]{16,}", uuid):
+        abort(400, "Missing/invalid uuid")
+
+    s = get_status(uuid)
+    # If first time or previous error, (re)kick the build
+    if not s or (s.get("done") and not s.get("pages_url")):
+        total_steps = (len(SCENARIOS) * 3) + 4
+        set_status(uuid, stage="queued", step=0, total=total_steps, done=False, error=None)
+        threading.Thread(target=build_and_publish, args=(uuid,), daemon=True).start()
+
+    return render_template_string(WAITING_ROOM_HTML)
 
 @app.get("/status")
 def status():
@@ -214,14 +278,12 @@ def status():
         return jsonify({"error":"Missing uuid"}), 400
     s = get_status(uuid)
     if not s:
-        # If nothing recorded yet, report queued
-        s = {"stage":"queued","step":0,"total":(len(SCENARIOS)*3 + 2),"done":False}
+        s = {"stage":"queued","step":0,"total":(len(SCENARIOS)*3 + 4),"done":False}
     return jsonify(s)
 
-# Keep your old /generate if you like, but the new flow uses /start
+# Backwards compatibility: /generate just sends to /start so users see progress
 @app.get("/generate")
 def generate_legacy():
-    # For backwards compatibility: simply redirect to /start so users see progress
     uuid = (request.args.get("uuid") or "").strip()
     if not uuid:
         abort(400, "Missing uuid")
@@ -230,3 +292,7 @@ def generate_legacy():
 @app.get("/")
 def health():
     return "OK"
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", "10000"))
+    app.run(host="0.0.0.0", port=port)
