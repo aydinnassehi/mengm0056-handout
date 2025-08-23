@@ -1,21 +1,14 @@
 <!doctype html>
 <meta charset="utf-8">
-<title>MENGM0056 – PDFs</title>
+<title>MENGM0056 – Scenario PDFs</title>
 <h1>MENGM0056 – Scenario PDFs</h1>
+<p>Enter your UUID to generate and view your PDFs.</p>
 
-<p>Enter your assigned UUID below to access your scenario PDFs.</p>
-
-<form id="uuidForm">
-  <input type="text" id="uuidInput" placeholder="Enter UUID" size="40" required>
-  <button type="submit">Get PDFs</button>
+<form method="get" action="https://YOUR-RENDER-URL/generate" style="margin-top:1rem;">
+  <input name="uuid" placeholder="123e4567-e89b-12d3-a456-426614174000" size="44" required>
+  <button type="submit">Generate PDFs</button>
 </form>
 
-<script>
-document.getElementById('uuidForm').addEventListener('submit', function(e) {
-  e.preventDefault();
-  const uuid = document.getElementById('uuidInput').value.trim();
-  if (uuid) {
-    window.location.href = uuid + "/index.html";
-  }
-});
-</script>
+<p style="margin-top:1rem;font-size:.9em;color:#555;">
+If your page does not open, refresh after a short while. The first run compiles the PDFs and publishes them.
+</p>
