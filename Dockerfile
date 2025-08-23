@@ -24,6 +24,6 @@ COPY . .
 EXPOSE 10000
 
 # Run the Flask app
-CMD ["flask", "run", "--host=0.0.0.0", "--port=10000"]
+CMD ["gunicorn", "-w", "1", "-b", "0.0.0.0:10000", "app:app"]
 
 
