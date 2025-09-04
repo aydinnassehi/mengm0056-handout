@@ -283,7 +283,7 @@ def render_latex(p: ScenarioParams) -> str:
     # Stations table
     lines.append(r"\subsection*{Stations and process timings}")
     lines.append(r"\begin{longtable}{@{}lllll@{}}")
-    lines.append(r"\toprule")
+    lines.append(r"\small\toprule")
     lines.append(r"\textbf{Stage} & \textbf{Count} & \textbf{Time} & \textbf{Quality} & \textbf{Notes} \\")
     lines.append(r"\midrule")
     lines.append(rf"Injection moulding & {p.moulding.count} & {p.moulding.cycle_time_s}~s/part & FPY {p.moulding.fpy} \newline (scrap {p.moulding.scrap_rate}) & Multi-cavity average \\")
