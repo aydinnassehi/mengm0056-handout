@@ -259,7 +259,7 @@ def render_latex(p: ScenarioParams) -> str:
     lines.append("")
     # Station table
     lines.append(r"\subsection*{Stations}")
-    lines.append(r"\begin{longtable}{@{}lllll@{}}")
+    lines.append(r"\begin{tabular}{@{}lllll@{}}")
     lines.append(r"\toprule")
     lines.append(r"\textbf{Resource} & \textbf{Count} & \textbf{Time} & \textbf{Quality} & \textbf{Notes} \\")
     lines.append(r"\midrule")
@@ -270,7 +270,7 @@ def render_latex(p: ScenarioParams) -> str:
     lines.append(rf"FT rack slots & {p.ft.count} & {p.ft.cycle_time_s}~s/unit & False fail {p.ft.false_fail} & Parallel slots; queueing \\")
     lines.append(rf"Rework station(s) & {p.rework.count} & {p.rework.cycle_time_s}~s/unit & Success {p.rework.rework_success} & From alignment/ICT \\")
     lines.append(r"\bottomrule")
-    lines.append(r"\end{longtable}")
+    lines.append(r"\end{tabular}")
     lines.append("")
     # Reliability
     lines.append(r"\subsection*{Reliability and logistics}")
