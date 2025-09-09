@@ -282,8 +282,7 @@ def render_latex(p: ScenarioParams) -> str:
     lines.append("")
     # Stations table
     lines.append(r"\subsection*{Stations and process timings}")
-    lines.append(r"\small")
-    lines.append(r"\begin{longtable}{@{}lllll@{}}")
+    lines.append(r"\begin{tabular}{@{}lllll@{}}")
     lines.append(r"\toprule")
     lines.append(r"\textbf{Stage} & \textbf{Count} & \textbf{Time} & \textbf{Quality} & \textbf{Notes} \\")
     lines.append(r"\midrule")
@@ -294,7 +293,7 @@ def render_latex(p: ScenarioParams) -> str:
         lines.append(rf"EO sterilisation (batch) & {p.eo.count} & {p.eo.batch_time_min}~min/batch & - & Batch size {p.eo.batch_size_units} units \\")
     lines.append(rf"Clean-room packing & {p.packing.count} & - & FPY {p.packing.fpy} & Operators; per-operator rate see policy \\")
     lines.append(r"\bottomrule")
-    lines.append(r"\end{longtable}")
+    lines.append(r"\end{tabular}")
     lines.append("")
     # Policy
     lines.append(r"\subsection*{Buffer policy and quarantine}")
