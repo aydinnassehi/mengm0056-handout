@@ -304,7 +304,7 @@ def render_latex(p: ScenarioParams) -> str:
 
     # Line capacities
     lines.append(r"\subsection*{Line capacities and availability}")
-    lines.append(r"\begin{longtable}{@{}llll@{}}")
+    lines.append(r"\begin{tabular}{@{}llll@{}}")
     lines.append(r"\toprule")
     lines.append(r"\textbf{Resource} & \textbf{Count} & \textbf{Nominal rate} & \textbf{Availability} \\")
     lines.append(r"\midrule")
@@ -314,7 +314,7 @@ def render_latex(p: ScenarioParams) -> str:
     lines.append(rf"Case-packer & {p.packer.count} & {p.packer.case_rate_cph}~cph & {p.packer.availability} \\")
     lines.append(rf"Palletiser & {p.palletiser.count} & {p.palletiser.case_rate_cph}~cph & {p.palletiser.availability} \\")
     lines.append(r"\bottomrule")
-    lines.append(r"\end{longtable}")
+    lines.append(r"\end{tabular}")
     lines.append("")
 
     # Changeovers
