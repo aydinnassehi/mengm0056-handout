@@ -238,7 +238,7 @@ def render_latex(p: ScenarioParams) -> str:
     g = p.global_params
     lines = []
     lines.append(r"\documentclass[11pt,a4paper]{article}")
-    lines.append(r"\usepackage[margin=2.5cm]{geometry}")
+    lines.append(r"\usepackage[margin=2.5cm,landscape]{geometry}")
     lines.append(r"\usepackage{booktabs}")
     lines.append(r"\usepackage{siunitx}")
     lines.append(r"\usepackage{enumitem}")
