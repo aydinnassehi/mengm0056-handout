@@ -323,7 +323,7 @@ def render_latex(p: ScenarioParams) -> str:
 
     # Stations
     lines.append(r"\subsection*{Stations and process timings}")
-    lines.append(r"\begin{longtable}{@{}lllll@{}}")
+    lines.append(r"\begin{tabular}{@{}lllll@{}}")
     lines.append(r"\toprule")
     lines.append(r"\textbf{Stage} & \textbf{Count} & \textbf{Time} & \textbf{Quality} & \textbf{Notes} \\")
     lines.append(r"\midrule")
@@ -335,7 +335,7 @@ def render_latex(p: ScenarioParams) -> str:
     lines.append(rf"Washing & {p.washing.count} & {p.washing.cycle_time_s}~s/part & - & Deburr and wash \\")
     lines.append(rf"CMM inspection & {p.cmm.count} & {p.cmm.cycle_time_s}~s/part & Scrap {p.cmm.scrap_rate} & Late discovery risk \\")
     lines.append(r"\bottomrule")
-    lines.append(r"\end{longtable}")
+    lines.append(r"\end{tabular}")
     lines.append("")
 
     # Materials and energy
