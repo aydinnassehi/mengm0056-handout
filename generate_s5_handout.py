@@ -303,7 +303,7 @@ def render_latex(p: ScenarioParams) -> str:
 
     # Stations
     lines.append(r"\subsection*{Stations and timings}")
-    lines.append(r"\begin{longtable}{@{}llll@{}}")
+    lines.append(r"\begin{tabular}{@{}llll@{}}")
     lines.append(r"\toprule")
     lines.append(r"\textbf{Stage} & \textbf{Count} & \textbf{Cycle/Test time} & \textbf{Notes} \\")
     lines.append(r"\midrule")
@@ -316,7 +316,7 @@ def render_latex(p: ScenarioParams) -> str:
     lines.append(rf"Pack EOL testers & {p.pack_eol.count} & {p.pack_eol.cycle_time_s}~s/pack & Insulation, charge/discharge \\")
     lines.append(rf"Leak testers & {p.leak_test.count} & {p.leak_test.cycle_time_s}~s/pack & Enclosure integrity \\")
     lines.append(r"\bottomrule")
-    lines.append(r"\end{longtable}")
+    lines.append(r"\end{tabular}")
     lines.append("")
 
     # Quality and variation
